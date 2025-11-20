@@ -14,6 +14,7 @@ interface GitHubIssue {
   user: { id: number };
   created_at: string;
   closed_at?: string;
+  pull_request?: Record<string, unknown>;
 }
 
 interface GitHubComment {
@@ -102,16 +103,17 @@ Environment Variables:
   const allIssues: GitHubIssue[] = [];
   let page = 1;
   const perPage = 100;
-  
+
   while (true) {
-    const pageIssues: GitHubIssue[] = await githubRequest(
+    const pageItems: GitHubIssue[] = await githubRequest(
       `/repos/${owner}/${repo}/issues?state=all&per_page=${perPage}&page=${page}&since=${cutoffDate.toISOString()}`,
       token
     );
-    
-    if (pageIssues.length === 0) break;
-    
-    allIssues.push(...pageIssues);
+
+    if (pageItems.length === 0) break;
+
+    const issuesOnly = pageItems.filter(issue => !issue.pull_request);
+    allIssues.push(...issuesOnly);
     page++;
     
     // Safety limit to avoid infinite loops
