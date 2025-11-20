@@ -11,6 +11,7 @@ interface GitHubIssue {
   title: string;
   user: { id: number };
   created_at: string;
+  pull_request?: Record<string, unknown>;
 }
 
 interface GitHubComment {
@@ -149,20 +150,20 @@ async function autoCloseDuplicates(): Promise<void> {
   const allIssues: GitHubIssue[] = [];
   let page = 1;
   const perPage = 100;
-  
+
   while (true) {
-    const pageIssues: GitHubIssue[] = await githubRequest(
+    const pageItems: GitHubIssue[] = await githubRequest(
       `/repos/${owner}/${repo}/issues?state=open&per_page=${perPage}&page=${page}`,
       token
     );
-    
-    if (pageIssues.length === 0) break;
-    
-    // Filter for issues created more than 3 days ago
-    const oldEnoughIssues = pageIssues.filter(issue => 
-      new Date(issue.created_at) <= threeDaysAgo
+
+    if (pageItems.length === 0) break;
+
+    // Filter out pull requests and issues created more than 3 days ago
+    const oldEnoughIssues = pageItems.filter(
+      issue => !issue.pull_request && new Date(issue.created_at) <= threeDaysAgo
     );
-    
+
     allIssues.push(...oldEnoughIssues);
     page++;
     
